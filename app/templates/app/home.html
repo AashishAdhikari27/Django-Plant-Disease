@@ -27,7 +27,7 @@
         .upload-container {
             background: #ffffff;
             border-radius: 8px;
-            width: 300px;
+            width: 400px;
             padding: 20px;
             text-align: center;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
@@ -39,8 +39,30 @@
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
         }
 
+        .drop-zone {
+            border: 2px dashed #007bff;
+            border-radius: 8px;
+            padding: 20px;
+            cursor: pointer;
+            margin-bottom: 20px;
+            transition: background-color 0.3s ease;
+        }
+
+        .drop-zone.drag-over {
+            background-color: #e8f4ff;
+        }
+
+        .drop-zone p {
+            margin: 0;
+            font-size: 16px;
+            color: #007bff;
+        }
+
         .upload-container input[type="file"] {
-            display: none; /* Hide the file input */
+            margin-top: 10px;
+            padding: 5px;
+            font-size: 16px;
+            cursor: pointer;
         }
 
         .upload-button {
@@ -52,6 +74,7 @@
             border: none;
             cursor: pointer;
             transition: background-color 0.2s;
+            margin-top: 20px;
         }
 
         .upload-button:hover {
@@ -84,25 +107,20 @@
     </div>
 
     <div class="upload-container">
-
-        <form action="/predict" method="POST" enctype="multipart/form-data" class="upload-box" id="upload-form">
-
+        <form action="/predict" method="POST" enctype="multipart/form-data" id="upload-form">
             {% csrf_token %} <!-- Django CSRF Token -->
-            
-            <h2>Upload Your Image</h2>
 
-            <!-- Hidden file input -->
+            <div class="drop-zone" id="drop-zone">
+                <p>Drag and Drop the image here <br>
+                </p>
+            </div>
+
+            <!-- File input -->
             <input type="file" name="image" id="image-upload" accept="image/*" required>
 
-            <!-- Button to trigger file input click -->
-            <button type="button" class="upload-button" id="upload-button">Select Image</button>
-
             <!-- Submit button -->
-            <button type="submit" class="upload-button">Upload Image</button>
-
+            <button type="submit" class="upload-button">Predict Image</button>
         </form>
-
-        <br><br>
 
         <!-- Image Preview Section -->
         <div class="preview" id="image-preview">
@@ -111,33 +129,51 @@
     </div>
 
     <script>
-        // Select the file input, buttons, and preview elements
+        // Select elements
         const fileInput = document.getElementById('image-upload');
+        const dropZone = document.getElementById('drop-zone');
         const imagePreview = document.getElementById('image-preview');
         const previewImg = document.getElementById('preview-img');
-        const uploadButton = document.getElementById('upload-button');
-        const uploadForm = document.getElementById('upload-form');
 
-        // Trigger the file input click when the 'Select Image' button is clicked
-        uploadButton.addEventListener('click', function () {
-            fileInput.click();  // Simulate a click on the hidden file input
+        // Highlight drop zone on drag over
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('drag-over');
         });
 
-        // Show preview when file is selected
-        fileInput.addEventListener('change', function () {
-            const file = this.files[0];  // Get the first selected file
-            if (file) {
-                const reader = new FileReader();  // Create a file reader
-                reader.onload = function (e) {
-                    previewImg.src = e.target.result;  // Set the image source for preview
-                    imagePreview.style.display = 'block';  // Show the preview container
-                };
-                reader.readAsDataURL(file);  // Read the file as a data URL
+        // Remove highlight on drag leave
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('drag-over');
+        });
+
+        // Handle file drop
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('drag-over');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                fileInput.files = files; // Assign the files to the file input
+                handleFilePreview(files[0]); // Preview the first file
             }
         });
 
-        // Optionally, submit the form when the 'Upload Image' button is clicked
-        // No JavaScript needed for this as we are already submitting the form using the default submit button
+        // Handle file input change (click selection)
+        fileInput.addEventListener('change', function () {
+            const file = this.files[0];
+            if (file) {
+                handleFilePreview(file);
+            }
+        });
+
+        // Preview the selected or dropped file
+        function handleFilePreview(file) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                previewImg.src = e.target.result;
+                imagePreview.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        }
     </script>
 
 </body>
